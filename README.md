@@ -120,7 +120,6 @@ function draw(){
  if($('ref').checked)s+=curve(k,1,'var(--ref)',2,'2 4');
  s+=curve(k,n,'var(--enz)',2.6);
  s+='<circle cx="'+sx(k)+'" cy="'+sy(.5)+'" r="3.5" fill="var(--enz)"/>';
- $('read').innerHTML=tex('\\left.\\dfrac{dY_S}{d[\\mathrm{S}]}\\right|_{K_d}=\\dfrac{n}{4K_d}='+(n/(4*k)).toFixed(3)+'\\ \\mu\\mathrm{M}^{-1}'+(bd?';\\quad [\\mathrm{S}]_{10}='+lo.toFixed(2)+',\\ [\\mathrm{S}]_{90}='+hi.toFixed(2)+'\\ \\mu\\mathrm{M};\\quad \\Delta[\\mathrm{S}]=[\\mathrm{S}]_{90}-[\\mathrm{S}]_{10}='+(hi-lo).toFixed(2)+'\\ \\mu\\mathrm{M};\\quad \\dfrac{[\\mathrm{S}]_{90}}{[\\mathrm{S}]_{10}}='+(hi/lo).toFixed(1):''));
  $('plot').innerHTML=s;$('lab').innerHTML=Ls.a;draw2(k,n,bd,$('ref').checked)}
 MathJax.startup.promise.then(function(){return MathJax.typesetPromise()}).then(function(){
  document.querySelectorAll('input').forEach(function(e){e.addEventListener('input',draw)});
