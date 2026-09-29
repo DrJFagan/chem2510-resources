@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Michaelis–Menten kinetics explorer</title>
+<script>window.MathJax={tex:{inlineMath:[['$','$']]},svg:{fontCache:'none'},startup:{typeset:false}};</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f7f8f6;--panel:#fff;--ink:#1d2624;--mute:#5d6b67;--line:#d5dbd8;--enz:#1f6f78;--inh:#c2410c;--guide:#8a8f8d;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a19;--panel:#1c2423;--ink:#e7eeec;--mute:#9aa8a4;--line:#33403d;--enz:#5bc0cb;--inh:#fb923c;--guide:#8b9491;}}
+:root[data-theme="dark"]{--bg:#141a19;--panel:#1c2423;--ink:#e7eeec;--mute:#9aa8a4;--line:#33403d;--enz:#5bc0cb;--inh:#fb923c;--guide:#8b9491;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Source Serif 4",Georgia,serif}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 32px}
+h1{font-size:1.5rem;margin:0 0 4px;font-weight:600}
+.sub{color:var(--mute);margin:0 0 16px;font-size:.95rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:14px}
+.wrap{position:relative}
+.plots{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.plots .card{margin-bottom:0}
+@media (max-width:820px){.plots{grid-template-columns:1fr}}
+.cap{font-size:.95rem;color:var(--mute);margin:0 0 6px;font-weight:600}
+svg.plot{width:100%;height:auto;display:block}
+#lab{position:absolute;inset:0;pointer-events:none}
+.lb{position:absolute;white-space:nowrap;line-height:1;font-size:14px;color:var(--mute)}
+.lb.i{color:var(--inh)}
+.lb.e{color:var(--enz)}
+mjx-container{margin:0!important}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:680px){.grid{grid-template-columns:1fr}}
+h2{font-size:1.05rem;margin:0 0 8px;font-weight:600}
+h2 span{display:inline-block;width:12px;height:3px;margin-right:8px;vertical-align:middle;border-radius:2px}
+.row{display:grid;grid-template-columns:4.6rem 1fr 7rem;align-items:center;gap:8px;margin:8px 0;font-size:.95rem}
+.row output{text-align:right;color:var(--mute)}
+input[type=range]{width:100%}
+.enz input{accent-color:var(--enz)}.inh input{accent-color:var(--inh)}
+.tog{display:flex;align-items:center;gap:8px;font-family:system-ui,sans-serif;font-size:.95rem;margin-bottom:8px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px;font-family:system-ui,sans-serif}
+.seg label{border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.88rem}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--inh);border-color:var(--inh);color:#fff}
+.seg label:has(input:focus-visible),.tog input:focus-visible,input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.off{opacity:.45;pointer-events:none}
+.read{font-size:.9rem;color:var(--mute);margin:8px 0 0;overflow-x:auto}
+.note{font-size:.9rem;color:var(--mute);margin:6px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Michaelis–Menten kinetics</h1>
+<p class="sub">$V_0 = \dfrac{V_{\max}[\mathrm{S}]_0}{K_m + [\mathrm{S}]_0}$. Move the sliders to see how each parameter reshapes the curve.</p>
+
+<div class="plots">
+<div class="card"><p class="cap">Michaelis–Menten plot</p><div class="wrap"><svg id="plot" class="plot" viewBox="0 0 700 400" role="img" aria-label="Plot of initial velocity versus substrate concentration"></svg><div id="lab"></div></div></div>
+<div class="card"><p class="cap">Lineweaver–Burk (double-reciprocal) plot</p><div class="wrap"><svg id="plot2" class="plot" viewBox="0 0 700 400" role="img" aria-label="Double-reciprocal plot of 1 over velocity versus 1 over substrate concentration"></svg><div id="lab2"></div></div><p class="read" id="read2"></p></div>
+</div>
+
+<div class="grid">
+<div class="card enz">
+<h2><span style="background:var(--enz)"></span>Enzyme</h2>
+<div class="row"><label for="vmax">$V_{\max}$</label><input id="vmax" type="range" min="10" max="100" step="1" value="80"><output id="vmaxO"></output></div>
+<div class="row"><label for="km">$K_m$</label><input id="km" type="range" min="0.2" max="10" step="0.1" value="3"><output id="kmO"></output></div>
+</div>
+
+<div class="card inh">
+<h2><span style="background:var(--inh)"></span>Inhibitor</h2>
+<div class="tog"><input id="show" type="checkbox"><label for="show">Overlay inhibited curve</label></div>
+<div id="ctl" class="off">
+<div class="seg" role="radiogroup" aria-label="Inhibition type">
+<label><input type="radio" name="t" value="comp" checked>Competitive</label>
+<label><input type="radio" name="t" value="unc">Uncompetitive</label>
+<label><input type="radio" name="t" value="non">Noncompetitive</label>
+<label><input type="radio" name="t" value="mix">Mixed</label>
+</div>
+<div class="row"><label for="I">$[\mathrm{I}]$</label><input id="I" type="range" min="0" max="200" step="1" value="40"><output id="IO"></output></div>
+<div class="row"><label for="KI" id="KIl">$K_I$</label><input id="KI" type="range" min="1" max="200" step="1" value="20"><output id="KIO"></output></div>
+<div class="row" id="KIpRow"><label for="KIp">$K_I'$</label><input id="KIp" type="range" min="1" max="200" step="1" value="60"><output id="KIpO"></output></div>
+<p class="read" id="read"></p>
+</div>
+</div>
+</div>
+<p class="note">With inhibitor: $V_0 = \dfrac{V_{\max}[\mathrm{S}]_0}{\alpha K_m + \alpha'[\mathrm{S}]_0}$, where $\alpha = 1 + [\mathrm{I}]/K_I$ and $\alpha' = 1 + [\mathrm{I}]/K_I'$. $K_I$ is the dissociation constant for inhibitor binding to free enzyme ($\mathrm{E{\cdot}I}$) and $K_I'$ is for binding to the enzyme–substrate complex ($\mathrm{ES{\cdot}I}$). Competitive uses $K_I$ only, uncompetitive uses $K_I'$ only, noncompetitive sets $K_I' = K_I$, and mixed lets you set both.</p>
+</main>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var W=700,H=400,L=56,R=20,T=16,B=48,XM=20,YM=120;
+var sx=function(x){return L+x/XM*(W-L-R)},sy=function(y){return H-B-y/YM*(H-B-T)};
+var cache={},Ls={a:'',b:''},tg='a';
+function tex(s){if(!cache[s])cache[s]=MathJax.tex2svg(s).outerHTML;return cache[s]}
+// HTML label over the SVG; a = anchor (s start, m middle, e end)
+function lab(x,y,a,s,cls,rot){
+ Ls[tg]+='<span class="lb '+(cls||'')+'" style="left:'+(x/W*100).toFixed(2)+'%;top:'+(y/H*100).toFixed(2)+'%;transform:translate('+(a==='e'?'-100%':a==='m'?'-50%':'0')+',-50%)'+(rot?' rotate(-90deg)':'')+'">'+tex(s)+'</span>'}
+function type(){return document.querySelector('input[name=t]:checked').value}
+function f(v,k,s){return v*s/(k+s)}
+function line(x1,y1,x2,y2,c,w,d){return '<line x1="'+sx(x1)+'" y1="'+sy(y1)+'" x2="'+sx(x2)+'" y2="'+sy(y2)+'" stroke="'+c+'" stroke-width="'+w+'" stroke-dasharray="'+d+'"/>'}
+function curve(v,k,c){var p='';for(var i=0;i<=240;i++){var x=XM*i/240;p+=(i?'L':'M')+sx(x).toFixed(1)+','+sy(f(v,k,x)).toFixed(1)}return '<path d="'+p+'" fill="none" stroke="'+c+'" stroke-width="2.6"/>'}
+function guides(v,k,c,tg,ly,left,cls){
+ var s=line(0,v,XM,v,c,1.2,'6 4')+line(0,v/2,k,v/2,c,1.2,'6 4')+line(k,v/2,k,0,c,1.2,'6 4');
+ s+='<circle cx="'+sx(k)+'" cy="'+sy(v/2)+'" r="3.5" fill="'+c+'"/>';
+ if(left)lab(L+6,sy(v)-10,'s',tg[0]+'='+v.toFixed(1),cls);else lab(W-R-4,sy(v)-10,'e',tg[0]+'='+v.toFixed(1),cls);
+ if(tg[1])lab(L+6,sy(v/2)-10,'s',tg[1],cls);
+ lab(sx(k)+6,H-B-12-ly,'s',tg[2]+'='+k.toFixed(2),cls);
+ return s}
+function nice(lo,hi,n){var raw=(hi-lo)/n,p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p,st=(m<1.5?1:m<3?2:m<7?5:10)*p,t=[];for(var q=Math.ceil(lo/st-1e-9);q*st<=hi+1e-9;q++)t.push(q*st);return{t:t,st:st}}
+function fm(q,st){return (Math.abs(q)<st/1e3?0:q).toFixed(Math.max(0,-Math.floor(Math.log10(st)+1e-9)))}
+// Lineweaver-Burk: 1/V0 vs 1/[S]0.  Each line is [slope, intercept].
+function draw2(v,k,ih){
+ tg='b';
+ var s='',L2=76,ln=[[k/v,1/v]];
+ if(ih)ln.push([ih.a*k/v,ih.ap/v]);
+ var xi=Math.min.apply(null,ln.map(function(l){return -l[1]/l[0]})),x0=xi*1.2,x1=2,ys=[];
+ ln.forEach(function(l){ys.push(l[0]*x0+l[1],l[0]*x1+l[1])});
+ var y1=Math.max.apply(null,ys)*1.08,y0=Math.min(Math.min.apply(null,ys),-.14*y1);
+ var X=function(x){return L2+(x-x0)/(x1-x0)*(W-L2-R)},Y=function(y){return H-B-(y-y0)/(y1-y0)*(H-B-T)};
+ var seg=function(m,b,xa,xb,c,w,d){return '<line x1="'+X(xa)+'" y1="'+Y(m*xa+b)+'" x2="'+X(xb)+'" y2="'+Y(m*xb+b)+'" stroke="'+c+'" stroke-width="'+w+'" stroke-dasharray="'+d+'"/>'};
+ var dot=function(x,y,c){return '<circle cx="'+X(x)+'" cy="'+Y(y)+'" r="4" fill="'+c+'"/>'};
+ var tx=nice(x0,x1,6),ty=nice(y0,y1,6);
+ tx.t.forEach(function(q){lab(X(q),H-B+16,'m',fm(q,tx.st))});
+ ty.t.forEach(function(q){s+='<line x1="'+L2+'" y1="'+Y(q)+'" x2="'+(W-R)+'" y2="'+Y(q)+'" stroke="var(--line)" stroke-width=".6"/>';lab(L2-8,Y(q),'e',fm(q,ty.st))});
+ s+='<line x1="'+L2+'" y1="'+(H-B)+'" x2="'+(W-R)+'" y2="'+(H-B)+'" stroke="var(--mute)" stroke-width="1"/>';
+ s+='<line x1="'+L2+'" y1="'+T+'" x2="'+L2+'" y2="'+(H-B)+'" stroke="var(--mute)" stroke-width="1"/>';
+ s+='<line x1="'+X(x0)+'" y1="'+Y(0)+'" x2="'+X(x1)+'" y2="'+Y(0)+'" stroke="var(--guide)" stroke-width="1.2" stroke-dasharray="6 4"/>';
+ s+='<line x1="'+X(0)+'" y1="'+Y(y0)+'" x2="'+X(0)+'" y2="'+Y(y1)+'" stroke="var(--guide)" stroke-width="1.2" stroke-dasharray="6 4"/>';
+ lab(L2+(W-L2-R)/2,H-10,'m','1/[\\mathrm{S}]_0\\ (\\mathrm{mM}^{-1})');
+ lab(12,T+(H-B-T)/2,'m','1/V_0\\ (\\mathrm{min}/\\mu\\mathrm{M})','',true);
+ s+=seg(k/v,1/v,x0,1/XM,'var(--enz)',1.6,'5 4')+seg(k/v,1/v,1/XM,x1,'var(--enz)',2.6,'');
+ s+=dot(0,1/v,'var(--enz)')+dot(-1/k,0,'var(--enz)');
+ lab(X(0)-8,Y(1/v)-10,'e','1/V_{\\max}','e');
+ lab(X(-1/k)-6,Y(0)-12,'e','-1/K_m','e');
+ var f3=function(q){return q.toPrecision(3)},h=tex('\\text{slope}=\\dfrac{K_m}{V_{\\max}}='+f3(k/v)+'\\ \\mathrm{mM\\,min}/\\mu\\mathrm{M},\\ \\ y\\text{-int}=\\dfrac{1}{V_{\\max}}='+f3(1/v)+',\\ \\ x\\text{-int}=-\\dfrac{1}{K_m}='+(-1/k).toFixed(2)+'\\ \\mathrm{mM}^{-1}');
+ if(ih){
+  var m2=ih.a*k/v,b2=ih.ap/v,xi2=-b2/m2;
+  s+=seg(m2,b2,x0,1/XM,'var(--inh)',1.6,'5 4')+seg(m2,b2,1/XM,x1,'var(--inh)',2.6,'');
+  s+=dot(0,b2,'var(--inh)')+dot(xi2,0,'var(--inh)');
+  lab(X(0)+8,Y(b2)+12,'s',"\\alpha'/V_{\\max}",'i');
+  lab(X(xi2)+6,Y(0)+12,'s',"-\\alpha'/(\\alpha K_m)",'i');
+  h+='<br>'+tex("\\text{inhibited: slope}=\\dfrac{\\alpha K_m}{V_{\\max}}="+f3(m2)+",\\ \\ y\\text{-int}=\\dfrac{\\alpha'}{V_{\\max}}="+f3(b2)+",\\ \\ x\\text{-int}=-\\dfrac{\\alpha'}{\\alpha K_m}="+xi2.toFixed(2));
+ }
+ $('read2').innerHTML=h;$('plot2').innerHTML=s;$('lab2').innerHTML=Ls.b}
+function draw(){
+ Ls={a:'',b:''};tg='a';
+ var v=+$('vmax').value,k=+$('km').value,on=$('show').checked,s='',i;
+ $('vmaxO').innerHTML=tex(v+'\\ \\mu\\mathrm{M/min}');$('kmO').innerHTML=tex(k.toFixed(1)+'\\ \\mathrm{mM}');
+ for(i=0;i<=XM;i+=4)lab(sx(i),H-B+16,'m',String(i));
+ for(i=0;i<=YM;i+=20){s+='<line x1="'+L+'" y1="'+sy(i)+'" x2="'+(W-R)+'" y2="'+sy(i)+'" stroke="var(--line)" stroke-width=".6"/>';lab(L-8,sy(i),'e',String(i))}
+ s+=line(0,0,XM,0,'var(--mute)',1,'')+line(0,0,0,YM,'var(--mute)',1,'');
+ lab(L+(W-L-R)/2,H-10,'m','[\\mathrm{S}]_0\\ (\\mathrm{mM})');
+ lab(14,T+(H-B-T)/2,'m','V_0\\ (\\mu\\mathrm{M/min})','',true);
+ s+=guides(v,k,'var(--guide)',['V_{\\max}','\\tfrac{1}{2}V_{\\max}','K_m'],0,false,'');
+ s+=curve(v,k,'var(--enz)');
+ var t=type(),I=+$('I').value,KI=+$('KI').value,KIp=+$('KIp').value;
+ $('KIpRow').style.display=t==='mix'?'':'none';
+ $('KIl').innerHTML=tex(t==='unc'?"K_I'":'K_I');
+ $('IO').innerHTML=tex(I+'\\ \\mu\\mathrm{M}');$('KIO').innerHTML=tex(KI+'\\ \\mu\\mathrm{M}');$('KIpO').innerHTML=tex(KIp+'\\ \\mu\\mathrm{M}');
+ $('ctl').className=on?'':'off';
+ if(on){
+  var a=1,ap=1;
+  if(t==='comp')a=1+I/KI;
+  else if(t==='unc')ap=1+I/KI;
+  else if(t==='non'){a=1+I/KI;ap=a}
+  else{a=1+I/KI;ap=1+I/KIp}
+  var va=v/ap,ka=k*a/ap;
+  s+=guides(va,ka,'var(--inh)',['V_{\\max,\\mathrm{app}}','','K_{m,\\mathrm{app}}'],16,true,'i');
+  s+=curve(va,ka,'var(--inh)');
+  $('read').innerHTML=tex("\\alpha="+a.toFixed(2)+",\\ \\alpha'="+ap.toFixed(2)+"\\;\\Rightarrow\\;V_{\\max,\\mathrm{app}}="+va.toFixed(1)+"\\ \\mu\\mathrm{M/min},\\ K_{m,\\mathrm{app}}="+ka.toFixed(2)+"\\ \\mathrm{mM}");
+ }
+ $('plot').innerHTML=s;$('lab').innerHTML=Ls.a;draw2(v,k,on?{a:a,ap:ap}:null)}
+MathJax.startup.promise.then(function(){return MathJax.typesetPromise()}).then(function(){
+ document.querySelectorAll('input').forEach(function(e){e.addEventListener('input',draw)});
+ draw()});
+})();
+</script>
+</body>
+</html>
